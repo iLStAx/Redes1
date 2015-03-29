@@ -1,72 +1,90 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.InputStreamReader;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.*;
 import java.net.*;
-import java.io.*;
-
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpContext;
-import java.net.InetSocketAddress;
-import java.io.OutputStream;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.util.Date;
-import java.util.Map;
-import java.io.*;
+import java.util.*;
+import java.lang.*;
+import com.sun.net.httpserver.*;
 
 public class TCP_server 
 {
-	public static String user = "";
-	public static String password = "";
 	public static Date date = new Date();
 	public static void main(String[] args)throws Exception 
 	{
-		// try
-		// {	
+			ThreadPool pool = new ThreadPool(5, 10);
 		   	HttpServer server = HttpServer.create(new InetSocketAddress(8090), 0);
 			server.createContext("/home_old", new Home_old());
 			server.createContext("/secret", new Secret());
 			server.createContext("/login", new Login());
 			server.createContext("/", new Home());
-			server.setExecutor(null); // creates a default executor
+			server.setExecutor(pool); // creates a default executor
+			dataCleaner();
 			server.start();
-			// se inicia el servidor con puerto 8080
-			// ServerSocket servidor = new ServerSocket(8080);
-			// System.out.println("Server Up");
-			// while(true)
-			// {	
-
-			// 	Socket cliente = servidor.accept();
-			// 	//DataInputStream data = new DataInputStream(cliente.getInputStream());
-			// 	BufferedReader data = new BufferedReader(new InputStreamReader(cliente.getInputStream()));
-
-			// 	//mensaje de retorno de la pagina web
-			// 	PrintWriter dataWeb = new PrintWriter(cliente.getOutputStream());
-			// 	System.out.println("IP : " + cliente.getInetAddress());
-			// 	System.out.println("Port : " + cliente.getPort());
-			// 	System.out.println("Message : " + data.readLine());
-
-			// 	dataWeb.println("Welcome to redes");
-			// 	dataWeb.println("HTTP/1.0 200 OK");
-			// 	dataWeb.close();
-
-		// 	}
-		// }
-		// catch(IOException e)
-		// {
-		// 	e.printStackTrace();
-		// }
 	}
+	public static Boolean checkDataSaved() throws IOException 
+	{
+
+	    FileInputStream fstream = new FileInputStream("data.txt");
+		BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+		String strLine;
+		//Read File Line By Line
+		while ((strLine = br.readLine()) != null)   
+		{
+		  // Print the content on the console
+		 	if(strLine.split("&")[0].equals("root") && strLine.split("&")[1].equals("laboratorio1") )
+		  	{
+		  		br.close();
+		  		return true;
+		  	} 
+		}
+		br.close();
+		return false;
+
+		//Close the input stream	
+  	}
+
+  	public static void data(String user,String pass) throws IOException 
+	{
+	    File file = new File("data.txt");
+	    
+	    if(!file.exists()) {
+	      file.createNewFile();
+	    }
+	    
+	    FileWriter fw= new FileWriter(file.getName(),false);
+	    BufferedWriter bw = new BufferedWriter(fw);
+	    bw.write(user+"&"+pass+"\n");
+	    bw.close();
+  	}
+
+  	public static void dataCleaner() throws IOException 
+	{
+	    File file = new File("data.txt");
+	    
+	    if(!file.exists()) {
+	      file.createNewFile();
+	    }
+	    
+	    FileWriter fw= new FileWriter(file.getName(),false);
+	    BufferedWriter bw = new BufferedWriter(fw);
+	    bw.write("");
+	    bw.close();
+  	}
+
+
+	public static void logBonus(String address,String context,String date) throws IOException 
+	{
+	    File file = new File("log.txt");
+			// if file doesnt exists, then create it
+		if (!file.exists()) {
+			file.createNewFile();
+		}
+
+		FileWriter fw = new FileWriter(file.getAbsoluteFile(),true);
+		BufferedWriter bw = new BufferedWriter(fw);
+		bw.write(" IP : " + address);
+		bw.write(" | URL 	: "+context);
+		bw.write(" | "+date+"\n" );
+		bw.close();
+  	}
 
 	static class Home implements HttpHandler 
 	{
@@ -76,49 +94,7 @@ public class TCP_server
       		t.sendResponseHeaders(200, response.length());
       		OutputStream os = t.getResponseBody();
       		System.out.println("IP : " + t.getRemoteAddress());
-			System.out.println("URI : " + t.getRequestURI());
-			File file = new File("log.txt");
-			// if file doesnt exists, then create it
-			if (!file.exists()) {
-				file.createNewFile();
-			}
- 
-			FileWriter fw = new FileWriter(file.getAbsoluteFile(),true);
-			BufferedWriter bw = new BufferedWriter(fw);
-			bw.write("IP : " + t.getRemoteAddress());
-			bw.write(" | URI : /home" );
-			bw.write(" | "+date.toString()+"\n" );
-			bw.close();
-
-      		os.write(response.getBytes());
-      		os.close();
-   	 	}	
-  	}
-
-  	static class Login implements HttpHandler 
-	{
-    	public void handle(HttpExchange	 t) throws IOException 
-    	{
-    		String response = "<!DOCTYPE html><body> <form method = 'POST' action='/secret' 'style='margin-left:500px'>User:<br> <input type='text' name='user' id='user'>"+
-			"<br>Pass:<br> <input type='password' name='password' id='pass'> <input onclick='submit()' type='submit' value='Login'></form> </body>";
-      		t.sendResponseHeaders(200, response.length());
-      		OutputStream os = t.getResponseBody();
-      		System.out.println("IP : " + t.getRemoteAddress());
-			System.out.println("URI : " + t.getRequestURI());
-
-			File file = new File("log.txt");
-			// if file doesnt exists, then create it
-			if (!file.exists()) {
-				file.createNewFile();
-			}
- 
-			FileWriter fw = new FileWriter(file.getAbsoluteFile(),true);
-			BufferedWriter bw = new BufferedWriter(fw);
-			bw.write("IP : " + t.getRemoteAddress());
-			bw.write(" | URI : /login");
-			bw.write(" | "+date.toString()+"\n" );
-			bw.close();
-
+      		logBonus(t.getRemoteAddress().toString().toString(),"/home",date.toString());
       		os.write(response.getBytes());
       		os.close();
    	 	}	
@@ -135,75 +111,110 @@ public class TCP_server
       		OutputStream os = t.getResponseBody();
       		System.out.println("IP : " + t.getRemoteAddress());
 			System.out.println("URI : " + t.getRequestURI());
-			File file = new File("log.txt");
-			// if file doesnt exists, then create it
-			if (!file.exists()) {
-				file.createNewFile();
-			}
- 
-			FileWriter fw = new FileWriter(file.getAbsoluteFile(),true);
-			BufferedWriter bw = new BufferedWriter(fw);
-			bw.write("IP : " + t.getRemoteAddress());
-			bw.write(" | URI : /home_old");
-			bw.write(" | "+date.toString()+"\n" );
-			bw.close();
-
+      		logBonus(t.getRemoteAddress().toString(),"/home_old",date.toString());
       		os.write(response.getBytes());
       		os.close();
 
 		}
   	}	
 
+  	static class Login implements HttpHandler 
+	{
+    	public void handle(HttpExchange	 t) throws IOException 
+    	{
+    		String response = "<!DOCTYPE html><body> <form method = 'POST' action='/secret' 'style='margin-left:500px'>User:<br> <input type='text' name='user' id='user'>"+
+			"<br>Pass:<br> <input type='password' name='password' id='pass'> <input onclick='submit()' type='submit' value='Login'></form> </body>";
+      		t.sendResponseHeaders(200, response.length());
+      		OutputStream os = t.getResponseBody();
+      		System.out.println("IP : " + t.getRemoteAddress());
+			System.out.println("URI : " + t.getRequestURI());
+      		logBonus(t.getRemoteAddress().toString(),"/login",date.toString());
+      		os.write(response.getBytes());
+      		os.close();
+   	 	}	
+  	}
+
+
   	static class Secret implements HttpHandler 
   	{
     	public void handle(HttpExchange t) throws IOException 
     	{	
-    		URL    url            = new URL("localhost:8090/login");
-			HttpURLConnection cox= (HttpURLConnection) url.openConnection();           
-			cox.setDoOutput( true );
-			cox.setDoInput ( true );
-			cox.setInstanceFollowRedirects( false );
-			cox.setRequestMethod( "POST" );
-			cox.setRequestProperty( "Content-Type", "application/x-www-form-urlencoded"); 
-			cox.setRequestProperty( "charset", "utf-8");
-			cox.setRequestProperty( "Content-Length", Integer.toString( postDataLength ));
-			cox.setUseCaches( false );
-			try( DataOutputStream wr = new DataOutputStream( cox.getOutputStream())) {
-			   wr.write( postData );
-			}
-    		String response = "secret";
-    		// String userlogin = request.getParameter("user"); // HTTPSERVLET
-    		// String passwordlogin = request.getParameter("password"); //HTTPSERVLET
-    		// if (TCP_server.user != "root" && TCP_server.password != "laboratorio1")
-    		// 	{
-      // 				response = "<!DOCTYPE html> <h1 style='margin-left:500px'>403  (Forbidden)</h1> <br> <h2 style='margin-left:500px'>Can't Display this page, need authentication</h2>";
-    		// 	}
-    		// else if((TCP_server.user == "root" && TCP_server.password == "laboratorio1") || (userlogin == "root" && passwordlogin == "laboratorio1"))
-    		// {
-      // 				response = "<!DOCTYPE html> <h1 style='margin-left:500px'>200   (OK)</h1>";
-    		// }
-    		
-      		t.sendResponseHeaders(403, response.length());
-		    OutputStream os = t.getResponseBody();
-		    System.out.println("IP : " + t.getRemoteAddress());
-			System.out.println("URI : " + user);
-			File file = new File("log.txt");
-			// if file doesnt exists, then create it
-			if (!file.exists()) {
-				file.createNewFile();
-			}
- 
-			FileWriter fw = new FileWriter(file.getAbsoluteFile(),true);
-			BufferedWriter bw = new BufferedWriter(fw);
-			bw.write("IP : " + t.getRemoteAddress());
-			bw.write(" | URI : /secret");
-			bw.write(" | "+date.toString()+"\n" );
-			bw.close();
+    		String response = "<h1>Authentication OK</h1>";
+    		BufferedReader br = null;
+      		StringBuilder sb = new StringBuilder();
+   
+		      String line;
+		      try {
+		   
+		        br = new BufferedReader(new InputStreamReader(t.getRequestBody()));
+		        while ((line = br.readLine()) != null) {
+		          sb.append(line);
+		        }
+		   
+		      } catch (IOException e) {
+		        e.printStackTrace();
+		      } finally {
+		        if (br != null) {
+		          try {
+		            br.close();
+		          } catch (IOException e) {
+		            e.printStackTrace();
+		          }
+		        }
+		      }
+   
+	      	String body = sb.toString();
 
-		    os.write(response.getBytes());
-		    os.close();
-   	 	}
-  	}		
+	      	if (body.length() > 0) 
+	        {
+      			logBonus(t.getRemoteAddress().toString(),"/secret",date.toString());
+	        	String[] userPass = body.split("&"); 
+	        	System.out.println(userPass[0] + " ||| " + userPass[1]);
+
+	        	if (userPass[0].equals("user=root") && userPass[1].equals("password=laboratorio1")) {
+		          	data(userPass[0].split("=")[1],userPass[1].split("=")[1]);
+		          	t.sendResponseHeaders(200, response.length());
+		         	OutputStream os = t.getResponseBody();
+      				os.write(response.getBytes());
+		          	os.close();
+	        	}
+	        	else
+	        	{	
+		          	data(userPass[0].split("=")[1],userPass[1].split("=")[1]);
+	        		response = "<!DOCTYPE html> <head> <meta http-equiv='Refresh' content='2; URL=localhost:8090'></head><h1>403 Page Forbbiden</h1><br>Redirecting to Home";
+	        		t.sendResponseHeaders(403, response.length());
+		         	OutputStream os = t.getResponseBody();
+      				os.write(response.getBytes());
+		          	os.close();
+	        	}
+	        } 
+	        else if(checkDataSaved() == true)
+	        {
+	        	response = "<h1>Authentication OK</h1>";
+        		t.sendResponseHeaders(200, response.length());
+      			logBonus(t.getRemoteAddress().toString(),"/secret",date.toString());
+	         	OutputStream os = t.getResponseBody();
+				os.write(response.getBytes());
+	          	os.close();
+	        }
+	        else
+	        {
+	        	response = "<!DOCTYPE html> <head> <meta http-equiv='Refresh' content='2; URL=localhost:8090'></head><h1>403 Page Forbbiden</h1><br>Redirecting to Home";
+        		t.sendResponseHeaders(403, response.length());
+      			logBonus(t.getRemoteAddress().toString(),"/secret",date.toString());
+	         	OutputStream os = t.getResponseBody();
+				os.write(response.getBytes());
+	          	os.close();
+	        }
+
+	    }
+	}
 
 }
+
+
+ 		
+
+	
+
 
