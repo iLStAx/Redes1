@@ -19,7 +19,7 @@ public class ThreadPool {
         }
     }
 
-    public synchronized void execute(Runnable task) throws Exception{
+    public synchronized void  execute(Runnable task) throws Exception{
         if(this.isStopped) throw
             new IllegalStateException("ThreadPool is stopped");
 

@@ -8,7 +8,7 @@ public class PoolThread extends Thread {
     private boolean       isStopped = false;
 
     public PoolThread(BlockingQueue queue){
-      taskQueue = queue;
+        taskQueue = queue;
     }
 
     public void run(){

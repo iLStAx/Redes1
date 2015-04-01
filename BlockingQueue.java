@@ -23,6 +23,7 @@ public class BlockingQueue {
     this.queue.add(item);
   }
 
+
   public synchronized Object dequeue()
   throws InterruptedException{
     while(this.queue.size() == 0){
@@ -31,7 +32,9 @@ public class BlockingQueue {
     if(this.queue.size() == this.limit){
       notifyAll();
     }
+
     return this.queue.remove(0);
   }
 
 }
+    
